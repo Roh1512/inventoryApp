@@ -11,7 +11,6 @@ const limiter = RateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 20,
 });
-app.use(limiter);
 
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
@@ -28,7 +27,7 @@ const usersRouter = require("./routes/users");
 const catalogRouter = require("./routes/catalog");
 
 const app = express();
-
+app.use(limiter);
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
