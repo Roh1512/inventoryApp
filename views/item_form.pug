@@ -1,0 +1,53 @@
+extends layout
+
+block content
+    h1= title
+
+    div(class="brand-form-div-container")
+        form(method='POST' enctype='multipart/form-data')
+            div(class="mb-3")
+                label(for="name" class="form-label") Enter Item Name: 
+                input(class="form-control form-control-lg" type="text" placeholder="Enter name of the item" aria-label="name of item" id="name" name="name" required value=(undefined===item ? "" : item.name))
+            div(class="mb-3")
+                label(for="price" class="form-label") Enter Item Price: 
+                input(class="form-control form-control-lg" type="number" placeholder="Enter price of the item" aria-label="price of item" id="price" name="price" required value=(undefined===item ? "" : item.price))
+            div(class="mb-3")
+                label(for="description" class="form-label") Enter description: 
+                input(class="form-control form-control-lg" type="text" placeholder="Enter description of the item" aria-label="description of item" id="description" name="description" required value=(undefined===item ? "" : item.description))
+            div(class="mb-3")
+                label(for="category" class="form-label") Select category: 
+                select#category.form-select(name="category" aria-label="Category select") 
+                    option(value='') --Please select a category--
+                    for category in categories 
+                        if item && item.category
+                            if category._id.toString()===item.category._id.toString()
+                                option(value=category._id selected) #{category.name} 
+                            else 
+                                option(value=category._id) #{category.name} 
+                        else
+                            option(value=category._id selected) #{category.name}
+            div(class="mb-3")
+                label(for="brand" class="form-label") Select Brand: 
+                select#brand.form-select(name="brand" aria-label="Brand select") 
+                    option(value='') --Please select a brand--
+                    for brand in brands 
+                        if item && item.brand
+                            if brand._id.toString()===item.brand._id.toString()
+                                option(value=brand._id selected) #{brand.name} 
+                            else 
+                                option(value=brand._id) #{brand.name} 
+                        else
+                            option(value=brand._id selected) #{brand.name}
+            div(class="mb-3")
+                    label(for="number_in_stock" class="form-label") Enter available number of items in stock: 
+                    input(class="form-control form-control-lg" type="number" placeholder="Enter available number of items in stock" aria-label="Enter available number of items in stock" id="number_in_stock" name="number_in_stock" required value=(undefined===item ? "" : item.number_in_stock))
+            div(class="mb-3")
+                    label(for="Image" class="form-label") Add Image: 
+                    input(class="form-control form-control-lg" type="file" placeholder="Upload Image" aria-label="Upload image" id="image" name="image" required accept="image/*")
+            button(class="btn btn-success" type="submit") Submit
+         
+
+    if errors
+        ul
+        each error in errors
+            li.text-danger= error.msg

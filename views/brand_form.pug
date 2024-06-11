@@ -1,0 +1,17 @@
+extends layout
+
+block content 
+
+    div(class="brand-form-div-container")
+
+        h1 #{title}
+
+        form(method="POST")
+            div(class="mb-3")
+                label(for="name" class="form-label") Enter Brand Name: 
+                input(class="form-control form-control-lg" type="text" placeholder="Enter new Brand name" aria-label="Enter brand name" id="name" name="name" required value=(undefined===brand ? "" : brand.name))
+            button(class="btn btn-success" type="submit") Submit
+
+        if errors
+            for error in errors
+                p(class="error-text")= error.msg

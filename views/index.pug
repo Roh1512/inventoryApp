@@ -1,5 +1,13 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  div(class="home-body")
+    h1(class="fs-1 home-h1")= title
+    p(class="fs-4 fw-semibold") Welcome to our #[strong #{title}]. A very basic Express website that make use of all CRUD operations
+
+    h2(class="home-h2") All Contents
+
+    div(class="list-group home-links")
+      a(href="/catalog/items" class="list-group-item list-group-item-action") #[strong Items:] !{number_of_items}
+      a(href="/catalog/categories" class="list-group-item list-group-item-action") #[strong Categories:] !{number_of_categories}
+      a(href="/catalog/brands" class="list-group-item list-group-item-action") #[strong Brands:] !{number_of_brands}

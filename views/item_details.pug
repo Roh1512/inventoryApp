@@ -1,0 +1,21 @@
+extends layout 
+
+block content 
+    div(class="item-details-container container")
+        h1= item.name
+        img(src=item.image_url class="img-fluid" alt=item.name height="90vh")
+        div(class="item-details-div")
+            p(class="item-description")= item.description
+            p(class="item-price") $ !{item.price}
+            p(class="item-sub")
+                span(class="item-prop") Category: 
+                | !{item.category.name}
+            p(class="item-sub")
+                span(class="item-prop") Brand: 
+                | !{item.brand.name}
+            p(class="item-sub") !{item.number_in_stock} pieces left.
+            
+            div(class="item-buttons-container-div")
+                a(href=item.url+"/delete" class="btn btn-danger") Delete Item
+
+                a(href=item.url+"/update" class="btn btn-warning") Update Item

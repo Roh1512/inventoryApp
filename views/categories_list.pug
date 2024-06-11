@@ -1,0 +1,14 @@
+extends layout 
+
+block content 
+    h1= title
+    if all_categories.length 
+        div(class="categories-list-container")
+            each category in all_categories
+                div(class="card" style="width: 20rem")
+                    div(class="card-body")
+                        h4(class="card-title")= category.name
+                        p(class="card-text")= category.description
+                        a(href=category.url class="btn btn-primary") View Items in this category
+                        a(href=category.url+"/delete" class="btn btn-outline-danger") Delete Category
+                        a(href=category.url+"/update" class="btn btn-outline-warning") Update Category

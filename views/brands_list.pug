@@ -1,0 +1,13 @@
+extends layout 
+
+block content 
+    h1= title
+    if all_brands.length 
+        div(class="categories-list-container")
+            each brand in all_brands
+                div(class="card" style="width: 20rem")
+                    div(class="card-body")
+                        h4(class="card-title")= brand.name
+                        a(href=brand.url class="btn btn-primary") View Items in this Brand
+                        a(href=brand.url+"/delete" class="btn btn-outline-danger" style="width:fit-content;") Delete Brand
+                        a(href=brand.url+"/update" class="btn btn-outline-warning" style="width:fit-content;") Update Brand

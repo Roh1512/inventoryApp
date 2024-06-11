@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1= title
+  if all_items.length
+    div.all-items.container-fluid
+      each item in all_items 
+        div.card.mb-3.item-card
+          img.card-img-top(src=item.image_url alt=item.name style="max-width: 300px;")
+          div.card-body
+            h5.card-title.item-name-text= item.name 
+            p.card-text.item-price-text $ !{item.price}
+            a(href=item.url class="btn btn-primary stretched-link") #[strong View Item]
+  else
+    p No items found.

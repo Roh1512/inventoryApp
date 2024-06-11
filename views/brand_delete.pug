@@ -1,0 +1,20 @@
+extends layout
+
+block content
+    h1= title
+    h2= brand.name
+    if items_in_brand.length 
+        p #[strong Delete the following items before attempting to delete this brand.]
+        div(style='margin-left:20px;margin-top:20px')
+            h3 Items 
+            dl 
+                each item in items_in_brand 
+                    dt
+                        a(href=item.url) #{item.name}
+                    dd #{item.description}
+    else 
+        p Do you really want to delete this Brand?
+        form(method='POST')
+            div.form-group
+                input#brandid.form-control(type='hidden', name='brandid', value=brand._id)
+                button.btn.btn-primary(type='submit') Delete
