@@ -4,6 +4,7 @@ const { body, validationResult } = require("express-validator");
 const multer = require("multer");
 const cloudinary = require("../config/cloudinaryConfig");
 const upload = require("../config/multerConfig");
+const password_to_match = require("../config/adminPassword");
 
 const Item = require("../models/item");
 const Category = require("../models/category");
@@ -103,12 +104,14 @@ exports.item_create_post = [
     .withMessage("Number of items in stock must not be empty.")
     .isInt()
     .withMessage("Number of items in stock must be an integer"),
+  body("adminpassword", "Admin password must not be empty")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
 
   // Process request after validation and sanitization
   asyncHandler(async (req, res, next) => {
-    // Extract validation errors from the request
-    const errors = validationResult(req);
-
+    const entered_password = req.body.adminpassword;
     const item = new Item({
       name: req.body.name,
       price: req.body.price,
@@ -118,8 +121,61 @@ exports.item_create_post = [
       number_in_stock: req.body.number_in_stock,
     });
 
-    // If there are validation errors, re-render the form with error messages
-    if (!errors.isEmpty()) {
+    if (entered_password === password_to_match) {
+      // Extract validation errors from the request
+      const errors = validationResult(req);
+
+      // If there are validation errors, re-render the form with error messages
+      if (!errors.isEmpty()) {
+        const [categories, brands] = await Promise.all([
+          Category.find().sort({ name: 1 }).exec(),
+          Brand.find().sort({ name: 1 }).exec(),
+        ]);
+        res.render("item_form", {
+          title: "Create New Item",
+          item: item,
+          categories: categories,
+          brands: brands,
+          errors: errors.array(),
+        });
+        return;
+      }
+
+      // If no validation errors, proceed to upload the image
+      try {
+        const uploadStream = await cloudinary.uploader.upload_stream(
+          {
+            folder: "shoppingInventory",
+          },
+          async (error, result) => {
+            if (error) {
+              return next(error);
+            }
+            // Create a new Item object with the Cloudinary URL and other form data
+            const item = new Item({
+              name: req.body.name,
+              price: req.body.price,
+              description: req.body.description,
+              category: req.body.category,
+              brand: req.body.brand,
+              number_in_stock: req.body.number_in_stock,
+              image_url: result.secure_url.toString(),
+              image_public_id: result.public_id.toString(),
+            });
+            // Save the item to the database
+            await item.save();
+            res.redirect(item.url);
+          }
+        );
+        if (req.file && req.file.buffer) {
+          uploadStream.end(req.file.buffer);
+        } else {
+          throw new Error("File not provided");
+        }
+      } catch (error) {
+        return next(error);
+      }
+    } else {
       const [categories, brands] = await Promise.all([
         Category.find().sort({ name: 1 }).exec(),
         Brand.find().sort({ name: 1 }).exec(),
@@ -129,44 +185,8 @@ exports.item_create_post = [
         item: item,
         categories: categories,
         brands: brands,
-        errors: errors.array(),
+        errors: [{ msg: "Password is incorrect" }],
       });
-      return;
-    }
-
-    // If no validation errors, proceed to upload the image
-    try {
-      const uploadStream = await cloudinary.uploader.upload_stream(
-        {
-          folder: "shoppingInventory",
-        },
-        async (error, result) => {
-          if (error) {
-            return next(error);
-          }
-          // Create a new Item object with the Cloudinary URL and other form data
-          const item = new Item({
-            name: req.body.name,
-            price: req.body.price,
-            description: req.body.description,
-            category: req.body.category,
-            brand: req.body.brand,
-            number_in_stock: req.body.number_in_stock,
-            image_url: result.secure_url.toString(),
-            image_public_id: result.public_id.toString(),
-          });
-          // Save the item to the database
-          await item.save();
-          res.redirect(item.url);
-        }
-      );
-      if (req.file && req.file.buffer) {
-        uploadStream.end(req.file.buffer);
-      } else {
-        throw new Error("File not provided");
-      }
-    } catch (error) {
-      return next(error);
     }
   }),
 ];
@@ -180,29 +200,48 @@ exports.item_delete_get = asyncHandler(async (req, res, next) => {
     item: item,
   });
 });
-exports.item_delete_post = asyncHandler(async (req, res, next) => {
-  const itemId = req.params.id;
-  try {
-    // Find the item by ID
-    const item = await Item.findById(itemId);
+exports.item_delete_post = [
+  body("adminpassword", "Admin password must not be empty")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  asyncHandler(async (req, res, next) => {
+    const itemId = req.body.itemid;
+    const entered_password = req.body.adminpassword;
+    if (entered_password === password_to_match) {
+      try {
+        // Find the item by ID
+        const item = await Item.findById(itemId);
 
-    // If the item doesn't exist, redirect to the item list page
-    if (!item) {
-      res.redirect("/catalog/items");
-      return;
+        // If the item doesn't exist, redirect to the item list page
+        if (!item) {
+          res.redirect("/catalog/items");
+          return;
+        }
+        const image_public_id = item.image_public_id;
+        // Delete the image from Cloudinary
+        await cloudinary.uploader.destroy(image_public_id);
+        // Delete the item from the database
+        await Item.findByIdAndDelete(itemId);
+
+        // Redirect to the item list page
+        res.redirect("/catalog/items");
+      } catch (error) {
+        next(error);
+      }
+    } else {
+      const errors = ["Password is incorrect"];
+      // Find the item by ID
+      const item = await Item.findById(itemId);
+      res.render("delete_item", {
+        title: `Delete Item`,
+        item: item,
+        errors: errors,
+      });
     }
-    const image_public_id = item.image_public_id;
-    // Delete the image from Cloudinary
-    await cloudinary.uploader.destroy(image_public_id);
-    // Delete the item from the database
-    await Item.findByIdAndDelete(itemId);
-
-    // Redirect to the item list page
-    res.redirect("/catalog/items");
-  } catch (error) {
-    next(error);
-  }
-});
+  }),
+];
+/*  */
 exports.item_update_get = asyncHandler(async (req, res, next) => {
   const [item, categories, brands] = await Promise.all([
     Item.findById(req.params.id).populate("category brand").exec(),
@@ -258,12 +297,14 @@ exports.item_update_post = [
     .withMessage("Number of items in stock must not be empty.")
     .isInt()
     .withMessage("Number of items in stock must be an integer"),
+  body("adminpassword", "Admin password must not be empty")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
 
   // Process request after validation and sanitization
   asyncHandler(async (req, res, next) => {
-    // Extract validation errors from the request
-    const errors = validationResult(req);
-
+    const entered_password = req.body.adminpassword;
     const item = new Item({
       _id: req.params.id,
       name: req.body.name,
@@ -274,7 +315,75 @@ exports.item_update_post = [
       number_in_stock: req.body.number_in_stock,
     });
 
-    if (!errors.isEmpty()) {
+    if (entered_password === password_to_match) {
+      // Extract validation errors from the request
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        const [categories, brands] = await Promise.all([
+          Category.find().sort({ name: 1 }).exec(),
+          Brand.find().sort({ name: 1 }).exec(),
+        ]);
+        res.render("item_form", {
+          title: "Create New Item",
+          item: item,
+          categories: categories,
+          brands: brands,
+          errors: errors.array(),
+        });
+        return;
+      }
+      const itemId = req.params.id;
+      try {
+        const item_fetched = await Item.findById(itemId).exec();
+        if (!item_fetched) {
+          res.redirect("/catalog/items");
+          return;
+        }
+        const image_public_id = item_fetched.image_public_id;
+        // Delete the image from Cloudinary
+        await cloudinary.uploader.destroy(image_public_id);
+
+        //Add new image
+        // Upload the new image to Cloudinary
+        const uploadStream = await cloudinary.uploader.upload_stream(
+          {
+            folder: "shoppingInventory",
+          },
+          async (error, result) => {
+            if (error) {
+              return next(error);
+            }
+            // Create a new Item object with the Cloudinary URL and other form data
+            const item = new Item({
+              _id: req.params.id,
+              name: req.body.name,
+              price: req.body.price,
+              description: req.body.description,
+              category: req.body.category,
+              brand: req.body.brand,
+              number_in_stock: req.body.number_in_stock,
+              image_url: result.secure_url.toString(),
+              image_public_id: result.public_id.toString(),
+            });
+            // Save the item to the database
+            const updatedItem = await Item.findByIdAndUpdate(
+              req.params.id,
+              item,
+              {}
+            );
+            res.redirect(updatedItem.url);
+          }
+        );
+        if (req.file && req.file.buffer) {
+          uploadStream.end(req.file.buffer);
+        } else {
+          throw new Error("File not provided");
+        }
+      } catch (error) {
+        return next(error);
+      }
+    } else {
       const [categories, brands] = await Promise.all([
         Category.find().sort({ name: 1 }).exec(),
         Brand.find().sort({ name: 1 }).exec(),
@@ -284,59 +393,8 @@ exports.item_update_post = [
         item: item,
         categories: categories,
         brands: brands,
-        errors: errors.array(),
+        errors: [{ msg: "Password is incorrect" }],
       });
-      return;
-    }
-    const itemId = req.params.id;
-    try {
-      const item_fetched = await Item.findById(itemId).exec();
-      if (!item_fetched) {
-        res.redirect("/catalog/items");
-        return;
-      }
-      const image_public_id = item_fetched.image_public_id;
-      // Delete the image from Cloudinary
-      await cloudinary.uploader.destroy(image_public_id);
-
-      //Add new image
-      // Upload the new image to Cloudinary
-      const uploadStream = await cloudinary.uploader.upload_stream(
-        {
-          folder: "shoppingInventory",
-        },
-        async (error, result) => {
-          if (error) {
-            return next(error);
-          }
-          // Create a new Item object with the Cloudinary URL and other form data
-          const item = new Item({
-            _id: req.params.id,
-            name: req.body.name,
-            price: req.body.price,
-            description: req.body.description,
-            category: req.body.category,
-            brand: req.body.brand,
-            number_in_stock: req.body.number_in_stock,
-            image_url: result.secure_url.toString(),
-            image_public_id: result.public_id.toString(),
-          });
-          // Save the item to the database
-          const updatedItem = await Item.findByIdAndUpdate(
-            req.params.id,
-            item,
-            {}
-          );
-          res.redirect(updatedItem.url);
-        }
-      );
-      if (req.file && req.file.buffer) {
-        uploadStream.end(req.file.buffer);
-      } else {
-        throw new Error("File not provided");
-      }
-    } catch (error) {
-      return next(error);
     }
   }),
 ];

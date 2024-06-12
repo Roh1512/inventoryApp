@@ -10,7 +10,7 @@ block content
                 input(class="form-control form-control-lg" type="text" placeholder="Enter name of the item" aria-label="name of item" id="name" name="name" required value=(undefined===item ? "" : item.name))
             div(class="mb-3")
                 label(for="price" class="form-label") Enter Item Price: 
-                input(class="form-control form-control-lg" type="number" placeholder="Enter price of the item" aria-label="price of item" id="price" name="price" required value=(undefined===item ? "" : item.price))
+                input(class="form-control form-control-lg" type="number" placeholder="Enter price of the item" aria-label="price of item" id="price" name="price" required value=(undefined===item ? "" : item.price) step="any")
             div(class="mb-3")
                 label(for="description" class="form-label") Enter description: 
                 input(class="form-control form-control-lg" type="text" placeholder="Enter description of the item" aria-label="description of item" id="description" name="description" required value=(undefined===item ? "" : item.description))
@@ -44,10 +44,13 @@ block content
             div(class="mb-3")
                     label(for="Image" class="form-label") Add Image: 
                     input(class="form-control form-control-lg" type="file" placeholder="Upload Image" aria-label="Upload image" id="image" name="image" required accept="image/*")
+            div(class="mb-3 password-input-group")
+                    label(for="adminpassword" class="form-label" style="color:wheat;") Enter admin password: 
+                    input(class="form-control form-control-lg" type="password" placeholder="Admin password to delete or update data" aria-label="password to delete or update item" id="adminpassword" name="adminpassword" required )
             button(class="btn btn-success" type="submit") Submit
          
 
     if errors
         ul
         each error in errors
-            li.text-danger= error.msg
+            p(class="error-text")= error.msg
