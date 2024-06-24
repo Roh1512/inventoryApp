@@ -15,7 +15,12 @@ block content
                 | !{item.brand.name}
             p(class="item-sub") !{item.number_in_stock} pieces left.
             
-            div(class="item-buttons-container-div")
-                a(href=item.url+"/delete" class="btn btn-danger") Delete Item
+            if user
+                div(class="item-buttons-container-div")
+                    a(href=item.url+"/delete" class="btn btn-danger") Delete Item
 
-                a(href=item.url+"/update" class="btn btn-warning") Update Item
+                    a(href=item.url+"/update" class="btn btn-warning") Update Item
+            else 
+                div(class="item-buttons-container-div")
+                    a(href=item.url+"/delete" class="btn btn-primary") Add to cart
+                p Purchase functionality is not yet added.
