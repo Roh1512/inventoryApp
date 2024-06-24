@@ -111,11 +111,6 @@ exports.category_delete_get = asyncHandler(async (req, res, next) => {
   }
 });
 exports.category_delete_post = [
-  body("adminpassword", "Admin password must not be empty.")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
-
   asyncHandler(async (req, res, next) => {
     const [category, items_in_category] = await Promise.all([
       Category.findById(req.params.id).exec(),
@@ -170,10 +165,6 @@ exports.category_update_post = [
   body("description", "Description must be atleast 10 characters long")
     .trim()
     .isLength({ min: 10 })
-    .escape(),
-  body("adminpassword", "Admin password must not be empty")
-    .trim()
-    .isLength({ min: 1 })
     .escape(),
 
   // Process request after validation and sanitization.

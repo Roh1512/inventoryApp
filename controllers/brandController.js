@@ -107,10 +107,6 @@ exports.brand_delete_get = asyncHandler(async (req, res, next) => {
   }
 });
 exports.brand_delete_post = [
-  body("adminpassword", "Must not be empty")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
   asyncHandler(async (req, res, next) => {
     const [brand, items_in_brand] = await Promise.all([
       Brand.findById(req.params.id).exec(),
@@ -158,10 +154,6 @@ exports.brand_update_get = asyncHandler(async (req, res, next) => {
 });
 exports.brand_update_post = [
   body("name", "Brand name must not be empty")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
-  body("adminpassword", "Admin password must not be empty")
     .trim()
     .isLength({ min: 1 })
     .escape(),

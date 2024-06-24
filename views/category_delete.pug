@@ -18,9 +18,6 @@ block content
         p Do you really want to delete this Category?
         form(method='POST')
             div.form-group
-                div(class="mb-3 password-input-group")
-                    label(for="adminpassword" class="form-label") Enter admin password: 
-                    input(class="form-control form-control-lg" type="password" placeholder="Admin password to delete or update data" aria-label="password to delete or update brand" id="adminpassword" name="adminpassword" required )
                 input#categoryid.form-control(type='hidden', name='categoryid', value=category._id)
                 button.btn.btn-primary(type='submit') Delete Category
         if errors 

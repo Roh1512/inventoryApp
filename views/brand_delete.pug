@@ -17,9 +17,6 @@ block content
         p Do you really want to delete this Brand?
         form(method='POST')
             div.form-group
-                div(class="mb-3 password-input-group")
-                    label(for="adminpassword" class="form-label") Enter admin password: 
-                    input(class="form-control form-control-lg" type="password" placeholder="Admin password to delete or update data" aria-label="password to delete brand" id="adminpassword" name="adminpassword" required )
                 input#brandid.form-control(type='hidden', name='brandid', value=brand._id)
                 button.btn.btn-primary(type='submit') Delete
         if errors 
