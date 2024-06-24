@@ -1,0 +1,9 @@
+extends layout
+block content
+    if user 
+        div(class="logout-div")
+            h1= user.username
+            a(href="/catalog/logout") Logout 
+    else 
+        div(class="logout-div")
+            h1 User not logged in!

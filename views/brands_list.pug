@@ -9,5 +9,7 @@ block content
                     div(class="card-body")
                         h4(class="card-title")= brand.name
                         a(href=brand.url class="btn btn-primary") View Items in this Brand
-                        a(href=brand.url+"/delete" class="btn btn-outline-danger" style="width:fit-content;") Delete Brand
-                        a(href=brand.url+"/update" class="btn btn-outline-warning" style="width:fit-content;") Update Brand
+                        if user
+                            div(class="brand-btn-div")
+                                a(href=brand.url+"/delete" class="btn btn-outline-danger" style="width:fit-content;") Delete Brand
+                                a(href=brand.url+"/update" class="btn btn-outline-warning" style="width:fit-content;") Update Brand

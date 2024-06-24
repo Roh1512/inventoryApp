@@ -5,7 +5,6 @@ const Category = require("../models/category");
 const Item = require("../models/item");
 const brand = require("../models/brand");
 const category = require("../models/category");
-const password_to_match = require("../config/adminPassword");
 
 exports.category_list = asyncHandler(async (req, res, next) => {
   const all_categories = await Category.find({}).sort({ name: 1 }).exec();
@@ -34,7 +33,11 @@ exports.category_details = asyncHandler(async (req, res, next) => {
 });
 
 exports.category_create_get = asyncHandler(async (req, res, next) => {
-  res.render("category_form", { title: "Create Category" });
+  if (req.user) {
+    res.render("category_form", { title: "Create Category" });
+  } else {
+    res.redirect("/catalog/loginwarning");
+  }
 });
 exports.category_create_post = [
   // Validate and sanitize the name field.
@@ -47,21 +50,15 @@ exports.category_create_post = [
     .trim()
     .isLength({ min: 10 })
     .escape(),
-  body("adminpassword", "Admin password must not be empty")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
-
     //Create a new Category object with the sanitized name and description
     const category = new Category({
       name: req.body.name,
       description: req.body.description,
     });
 
-    if (entered_password === password_to_match) {
+    if (req.user) {
       // Extract the validation errors from a request.
       const errors = validationResult(req);
 
@@ -88,30 +85,30 @@ exports.category_create_post = [
         }
       }
     } else {
-      res.render("category_form", {
-        title: "Create Category",
-        category: category,
-        errors: [{ msg: "Password is incorrect" }],
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];
 
 exports.category_delete_get = asyncHandler(async (req, res, next) => {
-  const [category, items_in_category] = await Promise.all([
-    Category.findById(req.params.id).exec(),
-    Item.find({ category: req.params.id }, "name description")
-      .sort({ name: 1 })
-      .exec(),
-  ]);
-  if (category === null) {
-    res.redirect("/catalog/categories");
+  if (req.user) {
+    const [category, items_in_category] = await Promise.all([
+      Category.findById(req.params.id).exec(),
+      Item.find({ category: req.params.id }, "name description")
+        .sort({ name: 1 })
+        .exec(),
+    ]);
+    if (category === null) {
+      res.redirect("/catalog/categories");
+    }
+    res.render("category_delete", {
+      title: "Delete Category",
+      category: category,
+      items_in_category: items_in_category,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
   }
-  res.render("category_delete", {
-    title: "Delete Category",
-    category: category,
-    items_in_category: items_in_category,
-  });
 });
 exports.category_delete_post = [
   body("adminpassword", "Admin password must not be empty.")
@@ -120,14 +117,13 @@ exports.category_delete_post = [
     .escape(),
 
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
     const [category, items_in_category] = await Promise.all([
       Category.findById(req.params.id).exec(),
       Item.find({ category: req.params.id }, "name description")
         .sort({ name: 1 })
         .exec(),
     ]);
-    if (entered_password === password_to_match) {
+    if (req.user) {
       if (items_in_category.length > 0) {
         //Category has items. Render in the same way as for GET
         res.render("category_delete", {
@@ -139,31 +135,30 @@ exports.category_delete_post = [
       } else {
         await Category.findByIdAndDelete(req.params.id);
         res.redirect("/catalog/categories");
+        return;
       }
     } else {
-      const errors = ["Password is incorrect"];
-      res.render("category_delete", {
-        title: "Delete Category",
-        category: category,
-        items_in_category: items_in_category,
-        errors: errors,
-      });
+      res.redirect("/catalog/warning");
     }
   }),
 ];
 
 exports.category_update_get = asyncHandler(async (req, res, next) => {
-  const category = await Category.findById(req.params.id);
-  if (category === null) {
-    //No category found
-    const err = new Error("Category not found");
-    err.status = 404;
-    return next(err);
+  if (req.user) {
+    const category = await Category.findById(req.params.id);
+    if (category === null) {
+      //No category found
+      const err = new Error("Category not found");
+      err.status = 404;
+      return next(err);
+    }
+    res.render("category_form", {
+      title: "Update Category",
+      category: category,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
   }
-  res.render("category_form", {
-    title: "Update Category",
-    category: category,
-  });
 });
 exports.category_update_post = [
   // Validate and sanitize the name field.
@@ -183,7 +178,6 @@ exports.category_update_post = [
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
     const category = new Category({
       name: req.body.name,
       description: req.body.description,
@@ -191,7 +185,7 @@ exports.category_update_post = [
         .id /*// This is required, or a new ID will be assigned! */,
     });
 
-    if (entered_password === password_to_match) {
+    if (req.user) {
       // Extract the validation errors from a request.
       const errors = validationResult(req);
 
@@ -213,12 +207,7 @@ exports.category_update_post = [
         res.redirect(updatedCategory.url);
       }
     } else {
-      //password incorrect
-      res.render("category_form", {
-        title: "Update Category",
-        category: category,
-        errors: [{ msg: "Password is incorrect" }],
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];

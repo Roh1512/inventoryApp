@@ -6,10 +6,19 @@ const logger = require("morgan");
 const compression = require("compression");
 const helmet = require("helmet");
 const RateLimit = require("express-rate-limit");
+const passport = require("passport");
+
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+
+require("dotenv").config();
+require("./config/passport");
+
+const app = express();
 
 const limiter = RateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 20,
+  max: 40,
 });
 
 const mongoose = require("mongoose");
@@ -26,7 +35,47 @@ const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const catalogRouter = require("./routes/catalog");
 
-const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/**
+ * -------------- SESSION SETUP ----------------
+ */
+// Session store configuration
+const sessionStore = MongoStore.create({
+  mongoUrl: process.env.MONGODB_URI,
+  collectionName: "sessions",
+  ttl: 24 * 60 * 60, // 1 day
+});
+
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
+
+require("./config/passport");
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use((req, res, next) => {
+  res.locals.user = req.user;
+  next();
+});
+
+app.use((req, res, next) => {
+  console.log(req.session);
+  console.log(`User: \n${req.user}\n----`);
+  next();
+});
+
 app.use(limiter);
 app.use(
   helmet.contentSecurityPolicy({

@@ -4,7 +4,6 @@ const { body, validationResult } = require("express-validator");
 const multer = require("multer");
 const cloudinary = require("../config/cloudinaryConfig");
 const upload = require("../config/multerConfig");
-const password_to_match = require("../config/adminPassword");
 
 const Item = require("../models/item");
 const Category = require("../models/category");
@@ -59,15 +58,19 @@ exports.item_details = asyncHandler(async (req, res, next) => {
   });
 });
 exports.item_create_get = asyncHandler(async (req, res, next) => {
-  const [all_categories, all_brands] = await Promise.all([
-    Category.find().sort({ name: 1 }).exec(),
-    Brand.find().sort({ name: 1 }).exec(),
-  ]);
-  res.render("item_form", {
-    title: "Create New Item",
-    categories: all_categories,
-    brands: all_brands,
-  });
+  if (req.user) {
+    const [all_categories, all_brands] = await Promise.all([
+      Category.find().sort({ name: 1 }).exec(),
+      Brand.find().sort({ name: 1 }).exec(),
+    ]);
+    res.render("item_form", {
+      title: "Create New Item",
+      categories: all_categories,
+      brands: all_brands,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
+  }
 });
 exports.item_create_post = [
   // Middleware to handle file upload
@@ -104,14 +107,9 @@ exports.item_create_post = [
     .withMessage("Number of items in stock must not be empty.")
     .isInt()
     .withMessage("Number of items in stock must be an integer"),
-  body("adminpassword", "Admin password must not be empty")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
 
   // Process request after validation and sanitization
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
     const item = new Item({
       name: req.body.name,
       price: req.body.price,
@@ -121,7 +119,7 @@ exports.item_create_post = [
       number_in_stock: req.body.number_in_stock,
     });
 
-    if (entered_password === password_to_match) {
+    if (req.user) {
       // Extract validation errors from the request
       const errors = validationResult(req);
 
@@ -176,39 +174,28 @@ exports.item_create_post = [
         return next(error);
       }
     } else {
-      const [categories, brands] = await Promise.all([
-        Category.find().sort({ name: 1 }).exec(),
-        Brand.find().sort({ name: 1 }).exec(),
-      ]);
-      res.render("item_form", {
-        title: "Create New Item",
-        item: item,
-        categories: categories,
-        brands: brands,
-        errors: [{ msg: "Password is incorrect" }],
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];
 exports.item_delete_get = asyncHandler(async (req, res, next) => {
-  const item = await Item.findById(req.params.id, "name description");
-  if (item === null) {
-    res.redirect("/catalog/items");
+  if (req.user) {
+    const item = await Item.findById(req.params.id, "name description");
+    if (item === null) {
+      res.redirect("/catalog/items");
+    }
+    res.render("delete_item", {
+      title: `Delete Item`,
+      item: item,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
   }
-  res.render("delete_item", {
-    title: `Delete Item`,
-    item: item,
-  });
 });
 exports.item_delete_post = [
-  body("adminpassword", "Admin password must not be empty")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
   asyncHandler(async (req, res, next) => {
     const itemId = req.body.itemid;
-    const entered_password = req.body.adminpassword;
-    if (entered_password === password_to_match) {
+    if (req.user) {
       try {
         // Find the item by ID
         const item = await Item.findById(itemId);
@@ -230,37 +217,34 @@ exports.item_delete_post = [
         next(error);
       }
     } else {
-      const errors = ["Password is incorrect"];
-      // Find the item by ID
-      const item = await Item.findById(itemId);
-      res.render("delete_item", {
-        title: `Delete Item`,
-        item: item,
-        errors: errors,
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];
 /*  */
 exports.item_update_get = asyncHandler(async (req, res, next) => {
-  const [item, categories, brands] = await Promise.all([
-    Item.findById(req.params.id).populate("category brand").exec(),
-    Category.find().sort({ name: 1 }).exec(),
-    Brand.find().sort({ name: 1 }).exec(),
-  ]);
+  if (req.user) {
+    const [item, categories, brands] = await Promise.all([
+      Item.findById(req.params.id).populate("category brand").exec(),
+      Category.find().sort({ name: 1 }).exec(),
+      Brand.find().sort({ name: 1 }).exec(),
+    ]);
 
-  if (item === null) {
-    //No results
-    const err = new Error("No item found");
-    err.status = 404;
-    return next(err);
+    if (item === null) {
+      //No results
+      const err = new Error("No item found");
+      err.status = 404;
+      return next(err);
+    }
+    res.render("item_form", {
+      title: "Update Item",
+      item: item,
+      categories: categories,
+      brands: brands,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
   }
-  res.render("item_form", {
-    title: "Update Item",
-    item: item,
-    categories: categories,
-    brands: brands,
-  });
 });
 exports.item_update_post = [
   // Middleware to handle file upload
@@ -297,14 +281,9 @@ exports.item_update_post = [
     .withMessage("Number of items in stock must not be empty.")
     .isInt()
     .withMessage("Number of items in stock must be an integer"),
-  body("adminpassword", "Admin password must not be empty")
-    .trim()
-    .isLength({ min: 1 })
-    .escape(),
 
   // Process request after validation and sanitization
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
     const item = new Item({
       _id: req.params.id,
       name: req.body.name,
@@ -315,7 +294,7 @@ exports.item_update_post = [
       number_in_stock: req.body.number_in_stock,
     });
 
-    if (entered_password === password_to_match) {
+    if (req.user) {
       // Extract validation errors from the request
       const errors = validationResult(req);
 
@@ -340,61 +319,51 @@ exports.item_update_post = [
           res.redirect("/catalog/items");
           return;
         }
-        const image_public_id = item_fetched.image_public_id;
-        // Delete the image from Cloudinary
-        await cloudinary.uploader.destroy(image_public_id);
-
-        //Add new image
-        // Upload the new image to Cloudinary
-        const uploadStream = await cloudinary.uploader.upload_stream(
-          {
-            folder: "shoppingInventory",
-          },
-          async (error, result) => {
-            if (error) {
-              return next(error);
-            }
-            // Create a new Item object with the Cloudinary URL and other form data
-            const item = new Item({
-              _id: req.params.id,
-              name: req.body.name,
-              price: req.body.price,
-              description: req.body.description,
-              category: req.body.category,
-              brand: req.body.brand,
-              number_in_stock: req.body.number_in_stock,
-              image_url: result.secure_url.toString(),
-              image_public_id: result.public_id.toString(),
-            });
-            // Save the item to the database
-            const updatedItem = await Item.findByIdAndUpdate(
-              req.params.id,
-              item,
-              {}
-            );
-            res.redirect(updatedItem.url);
-          }
-        );
-        if (req.file && req.file.buffer) {
-          uploadStream.end(req.file.buffer);
-        } else {
-          throw new Error("File not provided");
+        if (req.body.image) {
         }
+        let image_public_id = item_fetched.image_public_id;
+        let image_url = item_fetched.image_url;
+
+        if (req.file && req.file.buffer) {
+          // Delete the image from Cloudinary
+          await cloudinary.uploader.destroy(image_public_id);
+          await cloudinary.uploader.destroy(image_public_id);
+
+          // Upload the new image to Cloudinary
+          const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: "shoppingInventory",
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            );
+            uploadStream.end(req.file.buffer);
+          });
+
+          image_url = uploadResult.secure_url.toString();
+          image_public_id = uploadResult.public_id.toString();
+        }
+
+        const updatedItem = {
+          name: req.body.name,
+          price: req.body.price,
+          description: req.body.description,
+          category: req.body.category,
+          brand: req.body.brand,
+          number_in_stock: req.body.number_in_stock,
+          image_url: image_url,
+          image_public_id: image_public_id,
+        };
+        const item = await Item.findByIdAndUpdate(itemId, updatedItem, {});
+        res.redirect(item.url);
       } catch (error) {
         return next(error);
       }
     } else {
-      const [categories, brands] = await Promise.all([
-        Category.find().sort({ name: 1 }).exec(),
-        Brand.find().sort({ name: 1 }).exec(),
-      ]);
-      res.render("item_form", {
-        title: "Create New Item",
-        item: item,
-        categories: categories,
-        brands: brands,
-        errors: [{ msg: "Password is incorrect" }],
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];

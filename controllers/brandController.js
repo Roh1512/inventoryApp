@@ -5,7 +5,6 @@ const debug = require("debug")("brand"); //FOR LOGGING
 const Brand = require("../models/brand");
 const Item = require("../models/item");
 const { ExpressValidator } = require("express-validator");
-const password_to_match = require("../config/adminPassword");
 
 exports.brand_list = asyncHandler(async (req, res, next) => {
   const all_brands = await Brand.find({}).sort({ name: 1 }).exec();
@@ -33,7 +32,11 @@ exports.brand_details = asyncHandler(async (req, res, next) => {
   });
 });
 exports.brand_create_get = asyncHandler(async (req, res, next) => {
-  res.render("brand_form", { title: "Create Brand" });
+  if (req.user) {
+    res.render("brand_form", { title: "Create Brand" });
+  } else {
+    res.redirect("/catalog/loginwarning");
+  }
 });
 exports.brand_create_post = [
   // Validate and sanitize the name field.
@@ -41,22 +44,16 @@ exports.brand_create_post = [
     .trim()
     .isLength({ min: 1 })
     .escape(),
-  body("adminpassword")
-    .trim()
-    .isLength({ min: 1 })
-    .escape()
-    .withMessage("Admin password must not be empty"),
 
   // Process request after validation and sanitization.
   asyncHandler(async (req, res, next) => {
     // Extract the validation errors from a request.
     const errors = validationResult(req);
-    const entered_password = req.body.adminpassword;
 
     //Create a brand object with escaped and trimmed data.
     const brand = new Brand({ name: req.body.name });
 
-    if (entered_password === password_to_match) {
+    if (req.user) {
       if (!errors.isEmpty()) {
         // There are errors. Render the form again with sanitized values/error messages.
         res.render("brand_form", {
@@ -76,6 +73,7 @@ exports.brand_create_post = [
         if (brandExists) {
           //Brand exists, redirect to its detail page.
           res.redirect(brandExists.url);
+          return;
         } else {
           await brand.save();
           //new brand saved. Redirect to its page
@@ -83,29 +81,30 @@ exports.brand_create_post = [
         }
       }
     } else {
-      res.render("brand_form", {
-        title: "Create brand",
-        brand: brand,
-        errors: [{ msg: "Password is not correct" }],
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];
 exports.brand_delete_get = asyncHandler(async (req, res, next) => {
-  const [brand, items_in_brand] = await Promise.all([
-    Brand.findById(req.params.id).exec(),
-    Item.find({ brand: req.params.id }, "name description")
-      .sort({ name: 1 })
-      .exec(),
-  ]);
-  if (brand === null) {
-    res.redirect("/catalog/brands");
+  if (req.user) {
+    const [brand, items_in_brand] = await Promise.all([
+      Brand.findById(req.params.id).exec(),
+      Item.find({ brand: req.params.id }, "name description")
+        .sort({ name: 1 })
+        .exec(),
+    ]);
+    if (brand === null) {
+      res.redirect("/catalog/brands");
+      return;
+    }
+    res.render("brand_delete", {
+      title: "Delete Brand",
+      brand: brand,
+      items_in_brand: items_in_brand,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
   }
-  res.render("brand_delete", {
-    title: "Delete Brand",
-    brand: brand,
-    items_in_brand: items_in_brand,
-  });
 });
 exports.brand_delete_post = [
   body("adminpassword", "Must not be empty")
@@ -113,14 +112,13 @@ exports.brand_delete_post = [
     .isLength({ min: 1 })
     .escape(),
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
     const [brand, items_in_brand] = await Promise.all([
       Brand.findById(req.params.id).exec(),
       Item.find({ brand: req.params.id }, "name description")
         .sort({ name: 1 })
         .exec(),
     ]);
-    if (password_to_match === entered_password) {
+    if (req.user) {
       if (items_in_brand.length > 0) {
         //Brand has items. Render in same way as for GET route.
         res.render("brand_delete", {
@@ -134,13 +132,7 @@ exports.brand_delete_post = [
         res.redirect("/catalog/brands");
       }
     } else {
-      const errors = ["Password does not match"];
-      res.render("brand_delete", {
-        title: "Delete Brand",
-        brand: brand,
-        items_in_brand: items_in_brand,
-        errors: errors,
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];
@@ -148,17 +140,21 @@ exports.brand_delete_post = [
 
 */
 exports.brand_update_get = asyncHandler(async (req, res, next) => {
-  const brand = await Brand.findById(req.params.id);
-  if (brand === null) {
-    //No brand found
-    const err = new Error("Brand not found");
-    err.status = 404;
-    return next(err);
+  if (req.user) {
+    const brand = await Brand.findById(req.params.id);
+    if (brand === null) {
+      //No brand found
+      const err = new Error("Brand not found");
+      err.status = 404;
+      return next(err);
+    }
+    res.render("brand_form", {
+      title: "Update brand",
+      brand: brand,
+    });
+  } else {
+    res.redirect("/catalog/loginwarning");
   }
-  res.render("brand_form", {
-    title: "Update brand",
-    brand: brand,
-  });
 });
 exports.brand_update_post = [
   body("name", "Brand name must not be empty")
@@ -170,13 +166,12 @@ exports.brand_update_post = [
     .isLength({ min: 1 })
     .escape(),
   asyncHandler(async (req, res, next) => {
-    const entered_password = req.body.adminpassword;
     const brand = new Brand({
       name: req.body.name,
       _id: req.params
         .id /*// This is required, or a new ID will be assigned! */,
     });
-    if (entered_password === password_to_match) {
+    if (req.user) {
       const errors = validationResult(req); // Extract the validation errors from a request.
       if (!errors.isEmpty()) {
         // There are errors. Render the form again with sanitized values/error messages.
@@ -196,11 +191,7 @@ exports.brand_update_post = [
         res.redirect(updatedBrand.url);
       }
     } else {
-      res.render("brand_form", {
-        title: "Create brand",
-        brand: brand,
-        errors: [{ msg: "Password is incorrect." }],
-      });
+      res.redirect("/catalog/loginwarning");
     }
   }),
 ];

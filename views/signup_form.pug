@@ -1,0 +1,22 @@
+extends layout
+
+block content
+    h1= title
+    div(class="login-form-div")
+        form(method="POST")
+            div(class="form-floating mb-3")
+                input(type="text" class="form-control" name="username" id="username" placeholder="Enter your username" required)
+                label(for="username") Username
+            div(class="form-floating mb-3")
+                input(type="password" class="form-control" name="password" id="password" placeholder="Enter your password" required)
+                label(for="password") Password
+            div(class="form-floating mb-3")
+                input(type="password" class="form-control" name="adminpassword" id="adminpassword" placeholder="Enter your Admin password")
+                label(for="adminpassword") Admin Password
+            button(type="submit" class="btn btn-primary") Sign Up
+        
+        if errors
+            for error in errors
+                div(class="alert alert-warning alert-dismissible fade show" role="alert")
+                    p= error.msg
+                    button(type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close")

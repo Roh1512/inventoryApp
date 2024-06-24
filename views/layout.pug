@@ -30,4 +30,17 @@ html(lang="en" data-bs-theme="dark")
                   a(class="dropdown-item" href="/catalog/categories/create") Create Category
                 li
                   a(class="dropdown-item" href="/catalog/brands/create") Create Brand
+            if(!user)
+              div(class="nav-btn-div")
+                li(class="nav-item")
+                  a(class="nav-link active btn btn-primary login-signup" aria-current="page" href="/catalog/login") Login 
+                li(class="nav-item")
+                  a(class="nav-link active btn btn-success login-signup" aria-current="page" href="/catalog/signup") Sign Up
+            if user 
+              div(class="nav-btn-div")
+                li(class="nav-item")
+                  a(class="nav-link active profile-btn" aria-current="page" href="/catalog/user")= user.username
+                li(class="nav-item")
+                  a(class="nav-link active" aria-current="page" href="/catalog/logout") Logout
+
     block content

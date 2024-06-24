@@ -43,10 +43,7 @@ block content
                     input(class="form-control form-control-lg" type="number" placeholder="Enter available number of items in stock" aria-label="Enter available number of items in stock" id="number_in_stock" name="number_in_stock" required value=(undefined===item ? "" : item.number_in_stock))
             div(class="mb-3")
                     label(for="Image" class="form-label") Add Image: 
-                    input(class="form-control form-control-lg" type="file" placeholder="Upload Image" aria-label="Upload image" id="image" name="image" required accept="image/*")
-            div(class="mb-3 password-input-group")
-                    label(for="adminpassword" class="form-label" style="color:wheat;") Enter admin password: 
-                    input(class="form-control form-control-lg" type="password" placeholder="Admin password to delete or update data" aria-label="password to delete or update item" id="adminpassword" name="adminpassword" required )
+                    input(class="form-control form-control-lg" type="file" placeholder="Upload Image" aria-label="Upload image" id="image" name="image" accept="image/*")
             button(class="btn btn-success" type="submit") Submit
          
 

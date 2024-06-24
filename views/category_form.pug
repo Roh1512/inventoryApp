@@ -13,9 +13,7 @@ block content
             div(class="mb-3")
                 label(for="description" class="form-label") Enter Category description: 
                 input(class="form-control form-control-lg" type="text" placeholder="Enter new Category description" aria-label="Enter new category description" id="description" name="description" required value!=(undefined===category ? "" : category.description))
-            div(class="mb-3 password-input-group")
-                    label(for="adminpassword" class="form-label") Enter admin password: 
-                    input(class="form-control form-control-lg" type="password" placeholder="Admin password to delete or update data" aria-label="password to delete or update category" id="adminpassword" name="adminpassword" required )
+            
             button(class="btn btn-success" type="submit") Submit
 
         if errors

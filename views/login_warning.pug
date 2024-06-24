@@ -1,0 +1,7 @@
+extends layout 
+block content 
+    div(class= "login-warning-div")
+        h1= title || "You must login first"
+        div(class= "login-signup-btn-div")
+            a(href="/catalog/login" class="btn btn-primary") Log in
+            a(href="/catalog/signup" class="btn btn-success") Sign Up
