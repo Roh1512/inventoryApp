@@ -70,11 +70,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
+/* app.use((req, res, next) => {
   console.log(req.session);
   console.log(`User: \n${req.user}\n----`);
   next();
-});
+}); */
 
 app.use(limiter);
 app.use(
