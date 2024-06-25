@@ -18,6 +18,47 @@ exports.login_get = asyncHandler(async (req, res, next) => {
   }
 });
 
+exports.login_post = [
+  body("username")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Username must not be empty")
+    .escape(),
+  body("password")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Password must not be empty.")
+    .escape(),
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      //There are errors
+      return res.render("login_form", {
+        title: "Login",
+        errors: errors.array(),
+      });
+      return;
+    }
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        next(err);
+      }
+      if (!user) {
+        return res.render("login_form", {
+          title: "Login",
+          errors: [{ msg: info.message }],
+        });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        return res.redirect("/catalog/user");
+      });
+    })(req, res, next);
+  }),
+];
+
 //Logout
 exports.logout_get = asyncHandler(async (req, res, next) => {
   req.logout((err) => {
@@ -45,7 +86,7 @@ exports.login_warning = asyncHandler(async (req, res, next) => {
 exports.signup_get = asyncHandler(async (req, res, next) => {
   res.render("signup_form", {
     title: "Sign Up",
-    errors: [{ msg: "Error occured" }],
+    errors: [],
   });
 });
 exports.signup_post = [

@@ -41,13 +41,7 @@ router.get("/brands/:id", brand_Controller.brand_details);
 
 // Login routes
 router.get("/login", user_Controller.login_get);
-router.post(
-  "/login",
-  passport.authenticate("local", {
-    successRedirect: "/catalog/user",
-    failureRedirect: "/catalog/signup",
-  })
-);
+router.post("/login", user_Controller.login_post);
 
 //logout routes
 router.get("/logout", user_Controller.logout_get);
