@@ -11,7 +11,9 @@ const passport = require("passport");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 
-require("dotenv").config();
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 require("./config/passport");
 
 const app = express();
@@ -27,9 +29,14 @@ mongoose.set("strictQuery", false);
 const mongodb = process.env.MONGODB_URI;
 
 async function main() {
-  await mongoose.connect(mongodb);
+  try {
+    await mongoose.connect(mongodb);
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+  }
 }
-main().catch((err) => console.log(err));
+main();
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
@@ -56,6 +63,7 @@ app.use(
     store: sessionStore,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
+      secure: process.env.NODE_ENV === "production",
     },
   })
 );
@@ -94,9 +102,10 @@ app.use(
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
-app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+if (process.env.NODE_ENV === "development") {
+  app.use(logger("dev"));
+}
+
 app.use(cookieParser());
 app.use(compression());
 app.use(express.static(path.join(__dirname, "public")));
