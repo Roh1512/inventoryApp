@@ -7,6 +7,7 @@ const compression = require("compression");
 const helmet = require("helmet");
 const RateLimit = require("express-rate-limit");
 const passport = require("passport");
+const favicon = require("serve-favicon");
 
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
@@ -109,6 +110,8 @@ if (process.env.NODE_ENV === "development") {
 app.use(cookieParser());
 app.use(compression());
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use(favicon(path.join(__dirname, "public", "images", "logoicon.svg")));
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
