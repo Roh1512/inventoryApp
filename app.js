@@ -19,11 +19,15 @@ require("./config/passport");
 
 const app = express();
 
-app.set("trust proxy", true);
+app.set("trust proxy", ["loopback", "linklocal", "uniquelocal"]);
 
 const limiter = RateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 40,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  keyGenerator: function (req) {
+    // Use a custom function to extract IP address from trusted headers
+    return req.headers["x-real-ip"] || req.headers["x-forwarded-for"] || req.ip;
+  },
 });
 
 const mongoose = require("mongoose");
