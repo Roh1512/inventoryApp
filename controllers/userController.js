@@ -33,7 +33,7 @@ exports.login_post = [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       //There are errors
-      return res.render("login_form", {
+      res.render("login_form", {
         title: "Login",
         errors: errors.array(),
       });
