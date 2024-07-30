@@ -140,7 +140,7 @@ exports.signup_post = [
           admin: true,
         });
         const result = await user.save();
-        console.log(`User Registered.\n${result}`);
+        console.log(`User Registered.\n`);
         res.redirect("/catalog/login");
       });
     } else {
